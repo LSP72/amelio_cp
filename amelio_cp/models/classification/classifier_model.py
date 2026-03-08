@@ -95,7 +95,12 @@ class ClassifierModel:
     def add_test_data(self, X, y):
         """Function that will add new samples to the training set."""
         self.X_test, self.y_test = self._add_template(X, y, self.X_test, self.y_test)
-        self.X_test_scaled = self.scaler.transform(self.X_test)
+
+    def rescale(self):
+        self.scaler.fit(self.X_train)
+        self.X_train_scaled = self.scaler.transform(self.X_train)
+        if self.X_test is not None:
+            self.X_test_scaled = self.scaler.transform(self.X_test)
 
     # Function that splits and adds datasets
     def add_data(self, X, y, test_size, smote=False):
@@ -117,6 +122,7 @@ class ClassifierModel:
 
         self.add_train_data(x_train, y_train)
         self.add_test_data(x_test, y_test)
+        self.rescale()  # rescaling the data after adding it
 
     # Function that handles and correctly stores the data
     @staticmethod

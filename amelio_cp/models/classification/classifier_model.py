@@ -90,7 +90,6 @@ class ClassifierModel:
     def add_train_data(self, X, y):
         """Function that will add new samples to the training set."""
         self.X_train, self.y_train = self._add_template(X, y, self.X_train, self.y_train)
-        self.X_train_scaled = self.scaler.fit_transform(self.X_train)
 
     # Specific function to add the testing data
     def add_test_data(self, X, y):
@@ -99,21 +98,22 @@ class ClassifierModel:
         self.X_test_scaled = self.scaler.transform(self.X_test)
 
     # Function that splits and adds datasets
-    def add_data(self, X, y, test_size):
+    def add_data(self, X, y, test_size, smote=False):
         x_train, x_test, y_train, y_test = train_test_split(
             X, y, test_size=test_size, stratify=y, random_state=self.random_state_split
         )
         print("Split has been done.", flush=True)
 
-        # check if training data set is imbalance, if so, use SMOTE to balance it
-        # IR = Imbalance Ratio
-        IR = max(y_train.value_counts()[0], y_train.value_counts()[1]) / min(
-            y_train.value_counts()[0], y_train.value_counts()[1]
-        )
-        # TODO: maybe add a condition for the user to decide whether they want to apply SMOTE or not
-        if IR > 2:
-            smote = SMOTE(sampling_strategy="auto", random_state=self.random_state)
-            x_train, y_train = smote.fit_resample(x_train, y_train)
+        if smote:
+            # check if training data set is imbalance, if so, use SMOTE to balance it
+            # IR = Imbalance Ratio
+            IR = max(y_train.value_counts()[0], y_train.value_counts()[1]) / min(
+                y_train.value_counts()[0], y_train.value_counts()[1]
+            )
+
+            if IR > 2:
+                smote = SMOTE(sampling_strategy="auto", random_state=self.random_state)
+                x_train, y_train = smote.fit_resample(x_train, y_train)
 
         self.add_train_data(x_train, y_train)
         self.add_test_data(x_test, y_test)

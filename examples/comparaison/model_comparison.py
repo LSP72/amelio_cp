@@ -20,24 +20,32 @@ print(f"Features used: \n", features_names)
 
 condition_to_predict = ["VIT", "6MWT", "GPS"]
 
+
 def shap_analysis(model, x_train, x_test, features_names):
     explainer = shap.KernelExplainer(model.predict, x_train)
     shap_values = explainer.shap_values(x_test)
-    shap.summary_plot(shap_values, x_test,
-            feature_names=features_names,  # model.feature_keys
-            max_display=len(features_names),
-            plot_size=(8, 10),
-            show=False,  # Prevent SHAP from auto-displaying
-        )
+    shap.summary_plot(
+        shap_values,
+        x_test,
+        feature_names=features_names,  # model.feature_keys
+        max_display=len(features_names),
+        plot_size=(8, 10),
+        show=False,  # Prevent SHAP from auto-displaying
+    )
     plt.show()
 
-stratify = input("Use of Stratified K-Fold? (True/False): ") # Set to True for stratified splitting, False for random splitting without stratification
-loo = input("Use Leave-One-Out Cross-Validation? (True/False): ") # Set to True for Leave-One-Out CV, False for Stratified K-Fold CV
+
+stratify = input(
+    "Use of Stratified K-Fold? (True/False): "
+)  # Set to True for stratified splitting, False for random splitting without stratification
+loo = input(
+    "Use Leave-One-Out Cross-Validation? (True/False): "
+)  # Set to True for Leave-One-Out CV, False for Stratified K-Fold CV
 if loo == "True":
-        Kstrat = LeaveOneOut()
+    Kstrat = LeaveOneOut()
 else:
     Kstrat = StratifiedKFold(n_splits=10, shuffle=True, random_state=42)
-     
+
 
 if stratify == "True":
     print("*" * 20)
@@ -46,12 +54,12 @@ if stratify == "True":
     for cond in condition_to_predict:
         print(f"\n\n===== Processing condition: {cond} =====\n")
 
-        X, y = Process.prepare_data2(data_path, 'svc', condition_to_predict[0], features_list)
+        X, y = Process.prepare_data2(data_path, "svc", condition_to_predict[0], features_list)
         scaler = StandardScaler()
         X = scaler.fit_transform(X)
 
         ## Logistic Regression
-        log_reg = LogisticRegression(max_iter=2000,random_state=42)
+        log_reg = LogisticRegression(max_iter=2000, random_state=42)
         log_reg_score = cross_val_score(log_reg, X, y, cv=Kstrat)
         print(f"Logistic Regression Accuracy: {log_reg_score.mean():.4f} (+/- {log_reg_score.std() * 2:.4f})")
         # shap_analysis(log_reg, x_train, x_test, features_names)
@@ -94,14 +102,16 @@ if stratify == "True":
         ## Linear Support Vector Machine
         linear_svc = LinearSVC(random_state=42)
         linear_svc_score = cross_val_score(linear_svc, X, y, cv=Kstrat)
-        print(f"Linear Support Vector Machine Accuracy: {linear_svc_score.mean():.4f} (+/- {linear_svc_score.std() * 2:.4f})")
+        print(
+            f"Linear Support Vector Machine Accuracy: {linear_svc_score.mean():.4f} (+/- {linear_svc_score.std() * 2:.4f})"
+        )
         # shap_analysis(linear_svc, x_train, x_test, features_names)
 
 else:
     for cond in condition_to_predict:
         print(f"\n\n===== Processing condition: {cond} =====\n")
 
-        X, y = Process.prepare_data2(data_path, 'svc', cond, features_list)
+        X, y = Process.prepare_data2(data_path, "svc", cond, features_list)
         strats = [None, y]  # No stratification and stratification by the target variable
 
         for strat in strats:
@@ -113,7 +123,7 @@ else:
             x_train, x_test, y_train, y_test = train_test_split(X, y, stratify=strat, test_size=0.2, random_state=42)
 
             ## Logistic Regression
-            log_reg = LogisticRegression(max_iter=2000,random_state=42)
+            log_reg = LogisticRegression(max_iter=2000, random_state=42)
             log_reg.fit(x_train, y_train)
             log_reg_score = log_reg.score(x_test, y_test)
             print(f"Logistic Regression Accuracy: {log_reg_score:.4f}")

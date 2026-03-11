@@ -139,7 +139,7 @@ class ClassifierModel:
         return X_model, y_model
 
     # Function that optimises and trains the model
-    def  train_and_tune(self, method: str, n_iter=100):
+    def train_and_tune(self, method: str, n_iter=100):
         """Tune hyperparameters with choosen method and fit the model."""
         if self.X_train_scaled is None or self.y_train is None:  # Check if there is some data
             raise ValueError("No data available for training.")

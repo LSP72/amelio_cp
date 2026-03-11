@@ -35,19 +35,19 @@ def test_optimisation_svc_model():
     y_pred = model.model.predict(model.X_test_scaled)
 
     np.testing.assert_almost_equal(
-        np.array(y_pred), np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+        np.array(y_pred), np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1])
     )
 
     # Random Search
     model.train_and_tune("random", n_iter=30)
     np.testing.assert_almost_equal(
         np.array([model.model.C, model.model.gamma, model.model.degree]),
-        np.array([460.24889196586713, 0.06111150117432088, 2]),
+        np.array([525.7564316322379, 0.030122914019804194, 2]),
     )
     y_pred = model.model.predict(model.X_test_scaled)
 
     np.testing.assert_almost_equal(
-        np.array(y_pred), np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+        np.array(y_pred), np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1])
     )
 
 

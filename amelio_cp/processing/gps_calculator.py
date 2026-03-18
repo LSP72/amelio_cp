@@ -47,7 +47,7 @@ def get_data_for_joint(all_data, side, joint):
 
 
 # ----- Access features in the mat files -----
-def gps_features(file_path: str, output_path: str, file_num: int, num_all_files: int, separate_legs: bool):
+def gps_features(file_path: str, file_num: int, num_all_files: int, separate_legs: bool, output_path: str):
     file = loadmat(file_path)
     side_structs = ["Right", "Left"]
     joint_names = ["Pelvis", "Hip", "Knee", "Ankle", "FootProgress"]
@@ -86,13 +86,14 @@ def gps_features(file_path: str, output_path: str, file_num: int, num_all_files:
             "L_foot progression",
         ]
 
-        if file_num < (((num_all_files) + 1) // 2):
-            joint_data.to_csv(output_path + "Subject%d_PreLokomat.csv" % (file_num + 1), index=False)
+        if output_path:
+            if file_num < (((num_all_files) + 1) // 2):
+                joint_data.to_csv(output_path + "Subject%d_PreLokomat.csv" % (file_num + 1), index=False)
 
-        else:
-            joint_data.to_csv(
-                output_path + "Subject%d_PostLokomat.csv" % (file_num + 1 - (((num_all_files) + 1) // 2)), index=False
-            )
+            else:
+                joint_data.to_csv(
+                    output_path + "Subject%d_PostLokomat.csv" % (file_num + 1 - (((num_all_files) + 1) // 2)), index=False
+                )
 
         print("The data of both sides is extracted together!")
         return joint_data
@@ -123,15 +124,16 @@ def gps_features(file_path: str, output_path: str, file_num: int, num_all_files:
             ]
             joint_data.columns = [side + "_" + dof for dof in dofs]
 
-            if file_num < (((num_all_files) + 1) // 2) or file_num == 25:
-                joint_data.to_csv(output_path + "Subject%d_%s_PreLokomat.csv" % (file_num + 1, side), index=False)
-                print("Subject%d_PreLokomat.csv for %s" % (file_num + 1, side_struct))
-            else:
-                joint_data.to_csv(
-                    output_path + "Subject%d_%s_PostLokomat.csv" % (file_num + 1 - (((num_all_files) + 1) // 2), side),
-                    index=False,
-                )
-                print("Subject%d_PreLokomat.csv for %s" % (file_num + 1, side_struct))
+            if output_path:
+                if file_num < (((num_all_files) + 1) // 2) or file_num == 25:
+                    joint_data.to_csv(output_path + "Subject%d_%s_PreLokomat.csv" % (file_num + 1, side), index=False)
+                    print("Subject%d_PreLokomat.csv for %s" % (file_num + 1, side_struct))
+                else:
+                    joint_data.to_csv(
+                        output_path + "Subject%d_%s_PostLokomat.csv" % (file_num + 1 - (((num_all_files) + 1) // 2), side),
+                        index=False,
+                    )
+                    print("Subject%d_PreLokomat.csv for %s" % (file_num + 1, side_struct))
 
             joint_data_both_sides = pd.concat([joint_data_both_sides, joint_data], axis=1)
 
@@ -143,14 +145,14 @@ def gps_features(file_path: str, output_path: str, file_num: int, num_all_files:
 def calculate_gvs(leg, reference, separate_legs):
     all_GVS = []
     if separate_legs == True:
-        n = len(reference)
+        n = len(reference.columns.to_list())
     elif separate_legs == False:
         n = 15
     else:
         raise ValueError("separate_legs was not True nor False")
 
     for i in range(n):
-        differences = leg.values[:, i] - reference[i]
+        differences = leg.values[:, i] - reference.values[:, i]
         leg_GVS = np.sqrt(np.mean(differences**2))
         all_GVS.append(leg_GVS)
     return all_GVS
@@ -160,19 +162,22 @@ def calculate_gps(data, reference, separate_legs: bool):
 
     if separate_legs == False:
         all_GVS = calculate_gvs(data, reference, separate_legs)
-        GPS = np.mean(all_GVS)
+        GPS = np.sqrt(np.mean(all_GVS**2))
         return GPS
 
     else:
+        right_ref = reference.loc[:, reference.columns.str.startswith("R")]
+        left_ref = reference.loc[:, reference.columns.str.startswith("L")]
         right_leg = data.loc[:, data.columns.str.startswith("R")]
+        right_leg.drop(['R_Pelvis tilt', 'R_Pelvis rot', 'R_Pelvis obli'], axis=1, inplace=True)
         left_leg = data.loc[:, data.columns.str.startswith("L")]
-        reference = np.concatenate((reference[6:9], (reference[9:] + reference[:6]) / 2))
+        # reference = np.concatenate((reference[6:9], (reference[9:] + reference[:6]) / 2))
 
-        right_all_GVS = calculate_gvs(right_leg, reference, separate_legs)
-        left_all_GVS = calculate_gvs(left_leg, reference, separate_legs)
+        right_all_GVS = calculate_gvs(right_leg, right_ref, separate_legs)
+        left_all_GVS = calculate_gvs(left_leg, left_ref, separate_legs)
 
-        r_GPS = np.mean(right_all_GVS)
-        l_GPS = np.mean(left_all_GVS)
+        r_GPS = np.sqrt(np.mean(np.power(right_all_GVS, 2)))
+        l_GPS = np.sqrt(np.mean(np.power(left_all_GVS, 2)))
 
         return r_GPS, l_GPS
 
@@ -193,8 +198,8 @@ def main(input_directory, file_path_for_ref, output_path_for_gps_cache, output_p
     mat_files_sorted = process_files(input_directory)
 
     reference = pd.read_csv(file_path_for_ref)
-    reference.drop(reference.columns[0], axis=1, inplace=True)
-    reference = reference.values
+    # reference.drop(reference.columns[0], axis=1, inplace=True)
+    # reference = reference.values
     all_GPS = []
 
     # ----- Read data: First read all Pre data and the all Post data -----
@@ -216,7 +221,7 @@ def main(input_directory, file_path_for_ref, output_path_for_gps_cache, output_p
 
     all_GPS = np.array(all_GPS)
     all_GPS = all_GPS.flatten()
-    reshaped_all_GPS = all_GPS.reshape((-1, 2), order="F")  # separates in two col (i.e., pre, and Post)
+    reshaped_all_GPS = all_GPS.reshape((-1, 2), order="F")  # separates in two col (i.e., Pre, and Post)
     GPS_output = pd.DataFrame(reshaped_all_GPS)
     GPS_output.columns = ["Pre", "Post"]
 
@@ -224,7 +229,8 @@ def main(input_directory, file_path_for_ref, output_path_for_gps_cache, output_p
         row_names = ["Right", "Left"]
         row_names = np.tile(row_names, len(reshaped_all_GPS) // 2)
         GPS_output.index = row_names
-        GPS_output.to_csv(f"{output_path}gps.csv")
+        if output_path:
+            GPS_output.to_csv(f"{output_path}gps.csv")
 
     print("----------------------------------")
     print("ANALYSIS DONE!")
@@ -232,8 +238,9 @@ def main(input_directory, file_path_for_ref, output_path_for_gps_cache, output_p
 
 
 if __name__ == "__main__":
-    input_directory = r"datasets/sample_test/raw_data/gps_data"
-    file_path_for_ref = r"datasets/sample_test/raw_data/gps_data/average.csv"
-    output_path_for_gps_cache = r"datasets/sample_test/raw_data/gps_data/gps_cache/"
-    output_path = r"datasets/sample_test/raw_data/gps_data/"
+    input = input("enter: ")
+    input_directory = input
+    file_path_for_ref = input + r"/average_result.csv"
+    output_path_for_gps_cache = input + r"/gps_cache/"
+    output_path = input + r"/"
     main(input_directory, file_path_for_ref, output_path_for_gps_cache, output_path, separate_legs=True)

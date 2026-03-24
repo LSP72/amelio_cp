@@ -92,7 +92,7 @@ for name, model in models.items():
 
     # fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
     # plt.plot(fpr, tpr, label=f"{name} (AUC = {auc:.4f})")
-plt.title('Comparison of Model Accuracies Across 100 Data Splits', fontsize=15, pad=15)
+plt.title('Model accuracies across 100 Data Splits\n (speed)', fontsize=13, pad=15)
 plt.xlabel('ROC AUC Score on hold-out test data', fontsize=12)
 plt.ylabel('Frequency (dep. on nb of splits)', fontsize=12)
 plt.legend(loc='upper left')

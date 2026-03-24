@@ -94,8 +94,8 @@ class Process:
         # Calculating ROM from the function above
         kinematic_variables = self.calculate_ROM(kinematic_variables)
 
-        # ----- fixing the values of cadence -----
-        kinematic_variables["vitCadencePasParMinute"] *= 2
+        # # ----- fixing the values of cadence -----
+        # kinematic_variables["vitCadencePasParMinute"] *= 2
 
         # ----- Add GPS to the features -----
         #       Gait Profile Score
@@ -106,6 +106,10 @@ class Process:
         demographic_variables = self.load_demographic_data(demographic_path)
 
         all_data = pd.concat((all_data, demographic_variables), axis=1)
+
+        # ----- Calculating the value of Cadence -----
+        all_data["vitCadencePasParMinute"] = 60 * all_data["VIT_PRE"]/all_data["distFoulee"] # VIT_PRE being in m/s
+
         # TODO: concat in one funct
 
         return all_data
